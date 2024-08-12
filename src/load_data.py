@@ -34,7 +34,7 @@ class MVTec(data.Dataset):
             path = os.path.join(path, "mvtec_loco_ad", class_name)
             mv_str = '/000.'
         elif dataset_name == 'mvtec-ad':
-            path = os.path.join(path, "mvtec_ad", class_name)
+            path = os.path.join(path, class_name)
             mv_str = '_mask.'
         else:
             path = os.path.join(path, "MPDD", class_name)
@@ -281,8 +281,25 @@ def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_
                                         transforms.ToTensor()  
                                         ])
     if dataset_name == 'mvtec-loco-ad' or dataset_name == 'mvtec-ad' or dataset_name == 'mpdd':
-        train_set = MVTec(dataset_name, path, class_name, transform=transform, mask_transform=mask_transform, seed=seed, split='train')
-        test_set = MVTec(dataset_name, path, class_name, transform=transform, mask_transform=mask_transform, seed=seed, split='test')
+        train_set = MVTec(dataset_name, path, class_name, transform=transform, mask_transform=mask_transform, seed=seed,
+                          split='train')
+        test_set = MVTec(dataset_name, path, class_name, transform=transform, mask_transform=mask_transform, seed=seed,
+                         split='test')
+        print(f"Train: {len(train_set)}, Test: {len(test_set)}")
+    elif dataset_name == 'mvtec-highvar':
+        classes = ['tile', 'bottle', 'cable', 'capsule', 'carpet', 'grid', 'hazelnut', 'leather', 'metal_nut', 'pill',
+                   'screw', 'toothbrush', 'transistor', 'wood', 'zipper']
+        train_set = []
+        test_set = []
+        for cls in classes:
+            train_s = MVTec('mvtec-ad', path, cls, transform=transform, mask_transform=mask_transform, seed=seed, split='train')
+            test_s = MVTec('mvtec-ad', path, cls, transform=transform, mask_transform=mask_transform, seed=seed, split='test')
+            print(f"Class: {cls}, Train: {len(train_s)}, Test: {len(test_s)}")
+            train_set.append(train_s)
+            test_set.append(test_s)
+        train_set = data.ConcatDataset(train_set)
+        test_set = data.ConcatDataset(test_set)
+        print(f"Total Train: {len(train_set)}, Total Test: {len(test_set)}")
     elif dataset_name == 'visa':
         train_set = VisA(path, class_name, transform=transform, mask_transform=mask_transform, seed=seed, split='train')
         test_set = VisA(path, class_name, transform=transform, mask_transform=mask_transform, seed=seed, split='test')
