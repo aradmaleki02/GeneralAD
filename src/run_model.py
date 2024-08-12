@@ -6,8 +6,10 @@ import sys
 import logging
 
 from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor, TQDMProgressBar
+from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor, TQDMProgressBar, Callback
 import pytorch_lightning as pl
+
+from torchmetrics import AUROC
 
 from .kdad_vit import AD_ViT
 from .simplenet import SimpleNet
@@ -21,6 +23,27 @@ class CustomTQDMProgressBar(TQDMProgressBar):
 
     def on_validation_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
         pass
+
+
+class AUROCCallback(Callback):
+    def __init__(self, pos_label=1):
+        super().__init__()
+        self.auroc = AUROC(pos_label=pos_label)
+
+    def on_validation_epoch_start(self, trainer, pl_module):
+        self.preds = []
+        self.targets = []
+
+    def on_validation_batch_end(self, trainer, pl_module, outputs, batch, batch_idx, dataloader_idx=0):
+        logits, labels = outputs['logits'], outputs['labels']
+        self.preds.append(logits)
+        self.targets.append(labels)
+
+    def on_validation_epoch_end(self, trainer, pl_module):
+        preds = torch.cat(self.preds).cpu()
+        targets = torch.cat(self.targets).cpu()
+        auroc = self.auroc(preds, targets)
+        pl_module.log("val_image_auroc", auroc, on_epoch=True, prog_bar=True)
 
 
 def run(args):
@@ -41,7 +64,8 @@ def run(args):
         callbacks=[
             ModelCheckpoint(save_weights_only=True, mode="max", monitor=f"val_{args.val_monitor}"),
             LearningRateMonitor("epoch"),
-            CustomTQDMProgressBar()
+            CustomTQDMProgressBar(),
+            AUROCCallback()
         ],
         enable_progress_bar=True
     )
@@ -130,8 +154,8 @@ def run(args):
                         log_pixel_metrics=args.log_pixel_metrics,
                         smoothing_sigma=args.smoothing_sigma,
                         smoothing_radius=args.smoothing_radius)
-            # trainer.fit(model, train_loader, test_loader)
-            trainer.fit(model, train_loader, None)
+            trainer.fit(model, train_loader, test_loader)
+            # trainer.fit(model, train_loader, None)
             checkpoint_dir = trainer.checkpoint_callback.best_model_path
             model = General_AD.load_from_checkpoint(checkpoint_dir)
             print('fin')
