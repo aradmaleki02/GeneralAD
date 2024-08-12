@@ -65,10 +65,6 @@ class BrainTrain(torch.utils.data.Dataset):
     def __init__(self, transform):
         self.transform = transform
         self.image_paths = glob.glob('./Br35H/dataset/train/normal/*')
-        brats_mod = glob.glob('./brats/dataset/train/normal/*')
-        random.seed(1)
-        random_brats_images = random.sample(brats_mod, 50)
-        self.image_paths.extend(random_brats_images)
 
     def __len__(self):
         return len(self.image_paths)
@@ -342,7 +338,6 @@ def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_
                           split='train')
         test_set = MVTec(dataset_name, path, class_name, transform=transform, mask_transform=mask_transform, seed=seed,
                          split='test')
-        print(f"Train: {len(train_set)}, Test: {len(test_set)}")
     elif dataset_name in ['br35h', 'brats']:
         if dataset_name == 'br35h':
             test_id = 1
@@ -364,7 +359,6 @@ def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_
             test_set.append(test_s)
         train_set = data.ConcatDataset(train_set)
         test_set = data.ConcatDataset(test_set)
-        print(f"Total Train: {len(train_set)}, Total Test: {len(test_set)}")
     elif dataset_name == 'visa':
         train_set = VisA(path, class_name, transform=transform, mask_transform=mask_transform, seed=seed, split='train')
         test_set = VisA(path, class_name, transform=transform, mask_transform=mask_transform, seed=seed, split='test')
@@ -452,6 +446,7 @@ def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_
         train_set = torch.utils.data.Subset(dataset, filtered_indices)
     else:
         sys.exit("This is not a valid dataset name")
+    print(f"Train: {len(train_set)}, Test: {len(test_set)}")
 
     if shots > 0 and shots < len(train_set):
         indices = list(range(shots))
