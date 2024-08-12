@@ -281,8 +281,17 @@ def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_
                                         transforms.ToTensor()  
                                         ])
     if dataset_name == 'mvtec-loco-ad' or dataset_name == 'mvtec-ad' or dataset_name == 'mpdd':
-        train_set = MVTec(dataset_name, path, class_name, transform=transform, mask_transform=mask_transform, seed=seed, split='train')
-        test_set = MVTec(dataset_name, path, class_name, transform=transform, mask_transform=mask_transform, seed=seed, split='test')
+        classes = ['tile', 'bottle', 'cable', 'capsule', 'carpet', 'grid', 'hazelnut', 'leather', 'metal_nut', 'pill',
+                   'screw', 'toothbrush', 'transistor', 'wood', 'zipper']
+        train_set = []
+        test_set = []
+        for cls in classes:
+            train_s = MVTec(dataset_name, path, cls, transform=transform, mask_transform=mask_transform, seed=seed, split='train')
+            test_s = MVTec(dataset_name, path, cls, transform=transform, mask_transform=mask_transform, seed=seed, split='test')
+            print(f"Class: {cls}, Train: {len(train_s)}, Test: {len(test_s)}")
+            train_set.extend(train_s)
+            test_set.extend(test_s)
+        print(f"Total Train: {len(train_set)}, Total Test: {len(test_set)}")
     elif dataset_name == 'visa':
         train_set = VisA(path, class_name, transform=transform, mask_transform=mask_transform, seed=seed, split='train')
         test_set = VisA(path, class_name, transform=transform, mask_transform=mask_transform, seed=seed, split='test')
