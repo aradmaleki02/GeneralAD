@@ -134,7 +134,10 @@ def run(args):
                                log_pixel_metrics=args.log_pixel_metrics,
                                smoothing_sigma=args.smoothing_sigma,
                                smoothing_radius=args.smoothing_radius)
-            trainer.fit(model, train_loader, test_loader)
+            if args.no_val:
+                trainer.fit(model, train_loader)
+            else:
+                trainer.fit(model, train_loader, test_loader)
             checkpoint_dir = trainer.checkpoint_callback.best_model_path
             model = General_AD.load_from_checkpoint(checkpoint_dir)
             print('fin')
