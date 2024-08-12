@@ -34,7 +34,7 @@ class MVTec(data.Dataset):
             path = os.path.join(path, "mvtec_loco_ad", class_name)
             mv_str = '/000.'
         elif dataset_name == 'mvtec-ad':
-            path = os.path.join(path, "mvtec_ad", class_name)
+            path = os.path.join(path, class_name)
             mv_str = '_mask.'
         else:
             path = os.path.join(path, "MPDD", class_name)
