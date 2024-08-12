@@ -459,6 +459,6 @@ def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_
     else:
         train_loader = data.DataLoader(train_set, batch_size=batch_size, shuffle=True, drop_last=True, pin_memory=True, num_workers=num_workers)
     
-    test_loader = data.DataLoader(test_set, batch_size=test_batch_size, shuffle=False, drop_last=False, num_workers=num_workers)
+    test_loader = data.DataLoader(test_set, batch_size=test_batch_size, shuffle=True, drop_last=False, num_workers=num_workers)
 
     return train_loader, test_loader

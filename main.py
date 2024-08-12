@@ -70,6 +70,7 @@ if __name__ == "__main__":
     parser.add_argument("--shots", type=int, default=-1, help="number of shots for few-shot setting.")
     parser.add_argument("--val_monitor", default="image_auroc", choices=['image_auroc', 'pixel_auroc'], help="Validate based on image level score or pixel level score.")
     parser.add_argument("--log_pixel_metrics", type=int, default=0, choices=[0, 1], help="If the dataset includes segmentation masks than 1 else 0.")
+    parser.add_argument("--no_val", action="store_true", help="use val set")
 
     # Parse arguments
     args = parser.parse_args()
