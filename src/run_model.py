@@ -4,7 +4,7 @@ import torch
 import sys
 
 from pytorch_lightning import Trainer, seed_everything
-from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor, TQDMProgressBar
+from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor, TQDMProgressBar, Callback
 import pytorch_lightning as pl
 
 from .kdad_vit import AD_ViT
@@ -19,6 +19,18 @@ class CustomTQDMProgressBar(TQDMProgressBar):
 
     def on_validation_epoch_end(self, trainer: "pl.Trainer", pl_module: "pl.LightningModule") -> None:
         pass
+
+
+class TestEveryNEpochs(Callback):
+    def __init__(self, test_loader, every_n_epochs=10):
+        self.test_loader = test_loader
+        self.every_n_epochs = every_n_epochs
+
+    def on_train_epoch_end(self, trainer, pl_module):
+        # Only test every `every_n_epochs`
+        if (trainer.current_epoch + 1) % self.every_n_epochs == 0:
+            results = trainer.test(pl_module, dataloaders=self.test_loader, verbose=False)
+            print(f"Epoch {trainer.current_epoch + 1}: Test Results: {results}")
 
 
 def run(args):
@@ -36,20 +48,6 @@ def run(args):
     if args.no_val:
         checkpoint_val = ModelCheckpoint(save_weights_only=True, every_n_epochs=n_epochs, save_on_train_epoch_end=True)
 
-    # lightning set-up
-    trainer = Trainer(
-        log_every_n_steps=args.log_every_n_steps,
-        accelerator="gpu",
-        devices=1,
-        max_epochs=args.epochs,
-        callbacks=[
-            checkpoint_val,
-            LearningRateMonitor("epoch"),
-            CustomTQDMProgressBar(),
-        ],
-        enable_progress_bar=True
-    )
-
     # data loaders
     train_loader, test_loader = prepare_loader(image_size=args.image_size,
                                                path=args.data_dir,
@@ -61,6 +59,22 @@ def run(args):
                                                seed=args.seed,
                                                shots=args.shots,
                                                shuffle=args.shuffle)
+
+    # lightning set-up
+    trainer = Trainer(
+        log_every_n_steps=args.log_every_n_steps,
+        accelerator="gpu",
+        devices=1,
+        max_epochs=args.epochs,
+        callbacks=[
+            checkpoint_val,
+            LearningRateMonitor("epoch"),
+            CustomTQDMProgressBar(),
+            TestEveryNEpochs(test_loader=test_loader, every_n_epochs=n_epochs)
+        ],
+        enable_progress_bar=True
+    )
+
 
     # seeding
     seed_everything(args.seed)
