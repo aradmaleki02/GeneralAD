@@ -45,6 +45,13 @@ class BrainTest(torch.utils.data.Dataset):
             self.test_path = test_normal_path + test_anomaly_path
             self.test_label = [0] * len(test_normal_path) + [1] * len(test_anomaly_path)
 
+        combined = list(zip(self.test_path, self.test_label))
+        random.seed(0)
+        random.shuffle(combined)
+        self.test_path, self.test_label = zip(*combined)
+        self.test_path = list(self.test_path)
+        self.test_label = list(self.test_label)
+
     def __len__(self):
         return len(self.test_path)
 
