@@ -512,8 +512,6 @@ class General_AD(pl.LightningModule):
         image_scores = torch.mean(topk_values, dim=1)
         image_labels = torch.cat(self.val_labels, dim=0)
 
-        print(image_labels)
-
         # calculate I-AUROC
         image_auroc = roc_auc_score(image_labels.view(-1).cpu().numpy(), image_scores.view(-1).cpu().numpy())
         self.log('val_image_auroc', round(image_auroc, 3), on_epoch=True)
