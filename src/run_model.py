@@ -29,7 +29,7 @@ def run(args):
             ModelCheckpoint(save_weights_only=True, mode="max", monitor=f"val_{args.val_monitor}"),
             LearningRateMonitor("epoch")
         ],
-        enable_progress_bar=False
+        enable_progress_bar=True
     )
 
     # data loaders
@@ -119,6 +119,7 @@ def run(args):
             trainer.fit(model, train_loader, test_loader)
             checkpoint_dir = trainer.checkpoint_callback.best_model_path
             model = General_AD.load_from_checkpoint(checkpoint_dir)
+            print('fin')
     else:
         print("This is not a valid method name.")
         sys.exit()
