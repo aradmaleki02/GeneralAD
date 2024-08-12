@@ -289,8 +289,10 @@ def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_
             train_s = MVTec(dataset_name, path, cls, transform=transform, mask_transform=mask_transform, seed=seed, split='train')
             test_s = MVTec(dataset_name, path, cls, transform=transform, mask_transform=mask_transform, seed=seed, split='test')
             print(f"Class: {cls}, Train: {len(train_s)}, Test: {len(test_s)}")
-            train_set.extend(train_s)
-            test_set.extend(test_s)
+            train_set.append(train_s)
+            test_set.append(test_s)
+        train_set = data.ConcatDataset(train_set)
+        test_set = data.ConcatDataset(test_set)
         print(f"Total Train: {len(train_set)}, Total Test: {len(test_set)}")
     elif dataset_name == 'visa':
         train_set = VisA(path, class_name, transform=transform, mask_transform=mask_transform, seed=seed, split='train')
