@@ -9,7 +9,7 @@ from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor, TQDMProgressBar, Callback
 import pytorch_lightning as pl
 
-from torchmetrics import AUROC
+from torchmetrics.classification import BinaryAUROC
 
 from .kdad_vit import AD_ViT
 from .simplenet import SimpleNet
@@ -26,9 +26,11 @@ class CustomTQDMProgressBar(TQDMProgressBar):
 
 
 class AUROCCallback(Callback):
-    def __init__(self, pos_label=1):
+    def __init__(self):
         super().__init__()
-        self.auroc = AUROC(pos_label=pos_label)
+        self.preds = None
+        self.targets = None
+        self.auroc = BinaryAUROC()
 
     def on_validation_epoch_start(self, trainer, pl_module):
         self.preds = []
