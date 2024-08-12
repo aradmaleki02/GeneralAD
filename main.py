@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # Add arguments
     parser.add_argument("--normal_class", type=str, default=0, help="Normal class for training")
     parser.add_argument("--seed", type=int, default=0, help="Seed for random number generators")
-    parser.add_argument("--dataset_name", default="cifar10", choices=['cifar10', 'mvtec-highvar', 'mvtec-loco-ad', 'mvtec-ad', 'fgvc-aircraft', 'cifar100', 'stanford-cars', 'fmnist', 'catsvdogs', 'view', 'mpdd', 'visa'], help="Name of the dataset")
+    parser.add_argument("--dataset_name", default="cifar10", choices=['br35h', 'brats', 'cifar10', 'mvtec-highvar', 'mvtec-loco-ad', 'mvtec-ad', 'fgvc-aircraft', 'cifar100', 'stanford-cars', 'fmnist', 'catsvdogs', 'view', 'mpdd', 'visa'], help="Name of the dataset")
     parser.add_argument("--epochs", type=int, default=10, help="Number of epochs")
     parser.add_argument("--log_every_n_steps", type=int, default=5, help="Log frequency")
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training")

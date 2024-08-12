@@ -1,4 +1,5 @@
 # basic
+import glob
 import os
 import random
 import sys
@@ -23,6 +24,62 @@ class RandomSubsetSampler(data.Sampler):
 
     def __len__(self):
         return self.subset_size
+
+
+class BrainTest(torch.utils.data.Dataset):
+    def __init__(self, transform, test_id=1):
+
+        self.transform = transform
+        self.test_id = test_id
+
+        test_normal_path = glob.glob('./Br35H/dataset/test/normal/*')
+        test_anomaly_path = glob.glob('./Br35H/dataset/test/anomaly/*')
+
+        self.test_path = test_normal_path + test_anomaly_path
+        self.test_label = [0] * len(test_normal_path) + [1] * len(test_anomaly_path)
+
+        if self.test_id == 2:
+            test_normal_path = glob.glob('./brats/dataset/test/normal/*')
+            test_anomaly_path = glob.glob('./brats/dataset/test/anomaly/*')
+
+            self.test_path = test_normal_path + test_anomaly_path
+            self.test_label = [0] * len(test_normal_path) + [1] * len(test_anomaly_path)
+
+    def __len__(self):
+        return len(self.test_path)
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        img_path = self.test_path[idx]
+        img = Image.open(img_path).convert('RGB')
+        img = self.transform(img)
+
+        C, W, H = img.shape
+        mask = torch.zeros((H, W))
+        return img, self.test_label[idx], mask
+
+
+class BrainTrain(torch.utils.data.Dataset):
+    def __init__(self, transform):
+        self.transform = transform
+        self.image_paths = glob.glob('./Br35H/dataset/train/normal/*')
+        brats_mod = glob.glob('./brats/dataset/train/normal/*')
+        random.seed(1)
+        random_brats_images = random.sample(brats_mod, 50)
+        self.image_paths.extend(random_brats_images)
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        img_path = self.image_paths[idx]
+        img = Image.open(img_path).convert('RGB')
+        img = self.transform(img)
+        C, W, H = img.shape
+        mask = torch.zeros((H, W))
+        return img, 0, mask
 
 class MVTec(data.Dataset):
     def __init__(self, dataset_name, path, class_name, transform=None, mask_transform=None, seed=0, split='train'):
@@ -286,6 +343,14 @@ def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_
         test_set = MVTec(dataset_name, path, class_name, transform=transform, mask_transform=mask_transform, seed=seed,
                          split='test')
         print(f"Train: {len(train_set)}, Test: {len(test_set)}")
+    elif dataset_name in ['br35h', 'brats']:
+        if dataset_name == 'br35h':
+            test_id = 1
+        else:
+            test_id = 2
+        train_set = BrainTrain(transform)
+        test_set = BrainTest(transform, test_id)
+
     elif dataset_name == 'mvtec-highvar':
         classes = ['tile', 'bottle', 'cable', 'capsule', 'carpet', 'grid', 'hazelnut', 'leather', 'metal_nut', 'pill',
                    'screw', 'toothbrush', 'transistor', 'wood', 'zipper']
