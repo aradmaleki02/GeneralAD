@@ -1,14 +1,17 @@
 import os
 import torch
 import sys
+import logging
 
 from pytorch_lightning import Trainer, seed_everything
 from pytorch_lightning.callbacks import ModelCheckpoint, LearningRateMonitor
+from pytorch_lightning.loggers import Logger
 
 from .kdad_vit import AD_ViT
 from .simplenet import SimpleNet
 from .general_ad import General_AD
 from .load_data import prepare_loader
+
 
 def run(args):
     # device
@@ -19,10 +22,19 @@ def run(args):
     device = torch.device("cuda:0")
     print("Device:", device)
 
+    logger = logging.getLogger("pytorch_lightning")
+    logger.setLevel(logging.INFO)
+    console_handler = logging.StreamHandler()
+    console_handler.setLevel(logging.INFO)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    console_handler.setFormatter(formatter)
+    logger.addHandler(console_handler)
+
     # lightning set-up
     trainer = Trainer(
         log_every_n_steps=args.log_every_n_steps,
         accelerator="gpu",
+        logger=Logger(),
         devices=1,
         max_epochs=args.epochs,
         callbacks=[
