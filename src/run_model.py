@@ -21,18 +21,6 @@ class CustomTQDMProgressBar(TQDMProgressBar):
         pass
 
 
-class TestEveryNEpochs(Callback):
-    def __init__(self, test_loader, every_n_epochs=10):
-        self.test_loader = test_loader
-        self.every_n_epochs = every_n_epochs
-
-    def on_train_epoch_end(self, trainer, pl_module):
-        # Only test every `every_n_epochs`
-        if (trainer.current_epoch + 1) % self.every_n_epochs == 0:
-            results = trainer.test(pl_module, dataloaders=self.test_loader, verbose=False)
-            print(f"Epoch {trainer.current_epoch + 1}: Test Results: {results}")
-
-
 def run(args):
     # device
     if not torch.cuda.is_available():
@@ -63,6 +51,7 @@ def run(args):
     # lightning set-up
     trainer = Trainer(
         log_every_n_steps=args.log_every_n_steps,
+        check_val_every_n_epoch=n_epochs,
         accelerator="gpu",
         devices=1,
         max_epochs=args.epochs,
@@ -70,7 +59,6 @@ def run(args):
             checkpoint_val,
             LearningRateMonitor("epoch"),
             CustomTQDMProgressBar(),
-            TestEveryNEpochs(test_loader=test_loader, every_n_epochs=n_epochs)
         ],
         enable_progress_bar=True
     )
