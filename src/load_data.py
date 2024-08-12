@@ -292,8 +292,8 @@ def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_
         train_set = []
         test_set = []
         for cls in classes:
-            train_s = MVTec(dataset_name, path, cls, transform=transform, mask_transform=mask_transform, seed=seed, split='train')
-            test_s = MVTec(dataset_name, path, cls, transform=transform, mask_transform=mask_transform, seed=seed, split='test')
+            train_s = MVTec('mvtec-ad', path, cls, transform=transform, mask_transform=mask_transform, seed=seed, split='train')
+            test_s = MVTec('mvtec-ad', path, cls, transform=transform, mask_transform=mask_transform, seed=seed, split='test')
             print(f"Class: {cls}, Train: {len(train_s)}, Test: {len(test_s)}")
             train_set.append(train_s)
             test_set.append(test_s)
