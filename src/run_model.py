@@ -59,7 +59,8 @@ def run(args):
                                                test_batch_size=args.test_batch_size,
                                                num_workers=args.num_workers,
                                                seed=args.seed,
-                                               shots=args.shots)
+                                               shots=args.shots,
+                                               shuffle=args.shuffle)
 
     # seeding
     seed_everything(args.seed)

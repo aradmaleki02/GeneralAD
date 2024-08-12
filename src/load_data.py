@@ -320,7 +320,7 @@ class CatsVsDogs(data.Dataset):
             image = self.transform(image)
         return image, label
     
-def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_batch_size, num_workers, seed, shots):
+def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_batch_size, num_workers, seed, shots, shuffle=False):
     transform = transforms.Compose([transforms.Resize((image_size, image_size), Image.LANCZOS),
                                     transforms.ToTensor(),
                                     transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
@@ -459,6 +459,6 @@ def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_
     else:
         train_loader = data.DataLoader(train_set, batch_size=batch_size, shuffle=True, drop_last=True, pin_memory=True, num_workers=num_workers)
     
-    test_loader = data.DataLoader(test_set, batch_size=test_batch_size, shuffle=True, drop_last=False, num_workers=num_workers)
+    test_loader = data.DataLoader(test_set, batch_size=test_batch_size, shuffle=shuffle, drop_last=False, num_workers=num_workers)
 
     return train_loader, test_loader
