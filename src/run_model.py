@@ -29,10 +29,12 @@ def run(args):
 
     device = torch.device("cuda:0")
     print("Device:", device)
+    n_epochs = min(args.save_step, args.epochs)
 
-    checkpoint_val = ModelCheckpoint(save_weights_only=True, mode="max", monitor=f"val_{args.val_monitor}")
+    checkpoint_val = ModelCheckpoint(save_weights_only=True, mode="max", monitor=f"val_{args.val_monitor}",
+                                     every_n_epochs=n_epochs)
     if args.no_val:
-        checkpoint_val = ModelCheckpoint(save_weights_only=True, every_n_epochs=5, save_on_train_epoch_end=True)
+        checkpoint_val = ModelCheckpoint(save_weights_only=True, every_n_epochs=n_epochs, save_on_train_epoch_end=True)
 
     # lightning set-up
     trainer = Trainer(
