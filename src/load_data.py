@@ -1,4 +1,5 @@
 # basic
+import glob
 import os
 import random
 import sys
@@ -23,6 +24,68 @@ class RandomSubsetSampler(data.Sampler):
 
     def __len__(self):
         return self.subset_size
+
+
+class BrainTest(torch.utils.data.Dataset):
+    def __init__(self, transform, test_id=1):
+
+        self.transform = transform
+        self.test_id = test_id
+
+        test_normal_path = glob.glob('./Br35H/dataset/test/normal/*')
+        test_anomaly_path = glob.glob('./Br35H/dataset/test/anomaly/*')
+
+        self.test_path = test_normal_path + test_anomaly_path
+        self.test_label = [0] * len(test_normal_path) + [1] * len(test_anomaly_path)
+
+        if self.test_id == 2:
+            test_normal_path = glob.glob('./brats/dataset/test/normal/*')
+            test_anomaly_path = glob.glob('./brats/dataset/test/anomaly/*')
+
+            self.test_path = test_normal_path + test_anomaly_path
+            self.test_label = [0] * len(test_normal_path) + [1] * len(test_anomaly_path)
+
+        combined = list(zip(self.test_path, self.test_label))
+        random.seed(0)
+        random.shuffle(combined)
+        self.test_path, self.test_label = zip(*combined)
+        self.test_path = list(self.test_path)
+        self.test_label = list(self.test_label)
+
+    def __len__(self):
+        return len(self.test_path)
+
+    def __getitem__(self, idx):
+        if torch.is_tensor(idx):
+            idx = idx.tolist()
+
+        img_path = self.test_path[idx]
+        img = Image.open(img_path).convert('RGB')
+        img = self.transform(img)
+
+        C, W, H = img.shape
+        mask = torch.zeros((H, W))
+        return img, self.test_label[idx], mask
+
+
+class BrainTrain(torch.utils.data.Dataset):
+    def __init__(self, transform, id=1):
+        self.transform = transform
+        if id == 1:
+            self.image_paths = glob.glob('./Br35H/dataset/train/normal/*')
+        else:
+            self.image_paths = glob.glob('./brats/dataset/train/normal/*')
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        img_path = self.image_paths[idx]
+        img = Image.open(img_path).convert('RGB')
+        img = self.transform(img)
+        C, W, H = img.shape
+        mask = torch.zeros((H, W))
+        return img, 0, mask
 
 class MVTec(data.Dataset):
     def __init__(self, dataset_name, path, class_name, transform=None, mask_transform=None, seed=0, split='train'):
@@ -267,7 +330,7 @@ class CatsVsDogs(data.Dataset):
             image = self.transform(image)
         return image, label
     
-def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_batch_size, num_workers, seed, shots):
+def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_batch_size, num_workers, seed, shots, shuffle=False):
     transform = transforms.Compose([transforms.Resize((image_size, image_size), Image.LANCZOS),
                                     transforms.ToTensor(),
                                     transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
@@ -285,7 +348,14 @@ def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_
                           split='train')
         test_set = MVTec(dataset_name, path, class_name, transform=transform, mask_transform=mask_transform, seed=seed,
                          split='test')
-        print(f"Train: {len(train_set)}, Test: {len(test_set)}")
+    elif dataset_name in ['br35h', 'brats']:
+        if dataset_name == 'br35h':
+            test_id = 1
+        else:
+            test_id = 2
+        train_set = BrainTrain(transform, test_id)
+        test_set = BrainTest(transform, test_id)
+
     elif dataset_name == 'mvtec-highvar':
         classes = ['tile', 'bottle', 'cable', 'capsule', 'carpet', 'grid', 'hazelnut', 'leather', 'metal_nut', 'pill',
                    'screw', 'toothbrush', 'transistor', 'wood', 'zipper']
@@ -299,7 +369,6 @@ def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_
             test_set.append(test_s)
         train_set = data.ConcatDataset(train_set)
         test_set = data.ConcatDataset(test_set)
-        print(f"Total Train: {len(train_set)}, Total Test: {len(test_set)}")
     elif dataset_name == 'visa':
         train_set = VisA(path, class_name, transform=transform, mask_transform=mask_transform, seed=seed, split='train')
         test_set = VisA(path, class_name, transform=transform, mask_transform=mask_transform, seed=seed, split='test')
@@ -387,6 +456,7 @@ def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_
         train_set = torch.utils.data.Subset(dataset, filtered_indices)
     else:
         sys.exit("This is not a valid dataset name")
+    print(f"Train: {len(train_set)}, Test: {len(test_set)}")
 
     if shots > 0 and shots < len(train_set):
         indices = list(range(shots))
@@ -399,6 +469,6 @@ def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_
     else:
         train_loader = data.DataLoader(train_set, batch_size=batch_size, shuffle=True, drop_last=True, pin_memory=True, num_workers=num_workers)
     
-    test_loader = data.DataLoader(test_set, batch_size=test_batch_size, shuffle=False, drop_last=False, num_workers=num_workers)
+    test_loader = data.DataLoader(test_set, batch_size=test_batch_size, shuffle=shuffle, drop_last=False, num_workers=num_workers)
 
     return train_loader, test_loader
