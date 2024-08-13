@@ -69,9 +69,12 @@ class BrainTest(torch.utils.data.Dataset):
 
 
 class BrainTrain(torch.utils.data.Dataset):
-    def __init__(self, transform):
+    def __init__(self, transform, id=1):
         self.transform = transform
-        self.image_paths = glob.glob('./Br35H/dataset/train/normal/*')
+        if id == 1:
+            self.image_paths = glob.glob('./Br35H/dataset/train/normal/*')
+        else:
+            self.image_paths = glob.glob('./brats/dataset/train/normal/*')
 
     def __len__(self):
         return len(self.image_paths)
@@ -350,7 +353,7 @@ def prepare_loader(image_size, path, dataset_name, class_name, batch_size, test_
             test_id = 1
         else:
             test_id = 2
-        train_set = BrainTrain(transform)
+        train_set = BrainTrain(transform, test_id)
         test_set = BrainTest(transform, test_id)
 
     elif dataset_name == 'mvtec-highvar':
